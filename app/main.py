@@ -15,6 +15,7 @@ from bot.keyboards import get_subscribe_menu, get_main_menu, get_change_day_menu
 from repository.emotions_repository import find_emotions_by_user_id_and_date, save_emotions
 from repository.marks_repository import find_mark_by_user_id_and_date, save_mark
 from repository.user_repository import get_user_by_telegram_id, save_user
+from bot.stats import marks_histogram, marks_linegraph
 
 bot = Bot(token=os.environ['EMOTIONS_TG_TOKEN'], parse_mode='HTML')
 dp = Dispatcher(bot, storage=MemoryStorage())
@@ -201,6 +202,19 @@ async def add_note(message: types.Message, state: FSMContext):
     save_note(str(message.from_user.id), message.text, date)
     await state.finish()
     await message.reply('Заметка успешно сохранена!', reply_markup=get_main_menu())
+
+
+@dp.message_handler(Text(equals='Статистика'))
+async def get_stats(message: types.Message):
+    histogram_by_week = marks_histogram(str(message.from_user.id), 6)
+    histogram_by_month = marks_histogram(str(message.from_user.id), 29)
+    linegraph_by_week = marks_linegraph(str(message.from_user.id), 6)
+    linegraph_by_month = marks_linegraph(str(message.from_user.id), 29)
+    images = [histogram_by_week, histogram_by_month, linegraph_by_week, linegraph_by_month]
+    media = types.MediaGroup()
+    for image in images:
+        media.attach_photo(types.InputFile(f'bot/{image}'))
+    await bot.send_media_group(message.from_user.id, media)
 
 
 async def shutdown(dispatcher: Dispatcher):
