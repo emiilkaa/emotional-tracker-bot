@@ -1,0 +1,4 @@
+emoji~=2.5.1
+aiogram~=2.25.1
+SQLAlchemy~=2.0.15
+psycopg2~=2.9.6

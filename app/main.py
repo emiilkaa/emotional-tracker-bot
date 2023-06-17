@@ -10,10 +10,10 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
 
-from app.bot.keyboards import get_subscribe_menu, get_main_menu, get_change_day_menu, get_marks, get_settings_menu
-from app.repository.emotions_repository import find_emotions_by_user_id_and_date, save_emotions
-from app.repository.marks_repository import find_mark_by_user_id_and_date, save_mark
-from app.repository.user_repository import get_user_by_telegram_id, save_user
+from bot.keyboards import get_subscribe_menu, get_main_menu, get_change_day_menu, get_marks, get_settings_menu
+from repository.emotions_repository import find_emotions_by_user_id_and_date, save_emotions
+from repository.marks_repository import find_mark_by_user_id_and_date, save_mark
+from repository.user_repository import get_user_by_telegram_id, save_user
 
 bot = Bot(token=os.environ['EMOTIONS_TG_TOKEN'], parse_mode='HTML')
 dp = Dispatcher(bot, storage=MemoryStorage())

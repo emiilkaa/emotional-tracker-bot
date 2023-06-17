@@ -1,0 +1,14 @@
+version: '3'
+services:
+  emotions_db:
+    build: ./db/
+    ports:
+      - "5432:5432"
+
+  app:
+    build: ./app/
+    restart: always
+    depends_on:
+      - emotions_db
+    stdin_open: true
+    tty: true
