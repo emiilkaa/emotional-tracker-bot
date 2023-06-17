@@ -216,7 +216,7 @@ async def get_note_date(message: types.Message):
 
 @dp.message_handler(state=Form.note_date)
 async def get_note(message: types.Message, state: FSMContext):
-    date = datetime.datetime.strptime(message.text, "%d.%m.%Y")
+    date = datetime.datetime.strptime(message.text, '%d.%m.%Y')
     processing_note_date[message.from_user.id] = date
     await state.finish()
     await Form.note.set()
@@ -240,7 +240,7 @@ async def get_media_date(message: types.Message):
 
 @dp.message_handler(state=Form.media_date)
 async def get_media(message: types.Message, state: FSMContext):
-    date = datetime.datetime.strptime(message.text, "%d.%m.%Y")
+    date = datetime.datetime.strptime(message.text, '%d.%m.%Y')
     processing_media_date[message.from_user.id] = date
     await state.finish()
     await Form.media.set()
