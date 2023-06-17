@@ -9,8 +9,10 @@ from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
+from aiogram.types import InputMediaPhoto, InputMediaVideo
 
-from app.repository.notes_repository import save_note, get_notes_by_user_id_and_date
+from repository.media_repository import save_media_url, get_media_by_user_id_and_date
+from repository.notes_repository import save_note, get_notes_by_user_id_and_date
 from bot.keyboards import get_subscribe_menu, get_main_menu, get_change_day_menu, get_marks, get_settings_menu
 from repository.emotions_repository import find_emotions_by_user_id_and_date, save_emotions
 from repository.marks_repository import find_mark_by_user_id_and_date, save_mark
@@ -27,10 +29,13 @@ class Form(StatesGroup):
     get_date = State()
     note_date = State()
     note = State()
+    media_date = State()
+    media = State()
 
 
 processing_date = dict()
 processing_note_date = dict()
+processing_media_date = dict()
 
 
 @dp.message_handler(commands='start')
@@ -48,6 +53,12 @@ async def cmd_start(message: types.Message):
         await message.answer(start_message, reply_markup=get_main_menu())
 
 
+@dp.message_handler(state='*', commands='cancel')
+async def cmd_cancel(message: types.Message, state: FSMContext):
+    await state.finish()
+    await message.answer('Выберите функцию:', reply_markup=get_main_menu())
+
+
 @dp.callback_query_handler(Text(startswith='subscribe_'))
 async def subscribe(call: types.CallbackQuery):
     subscribe_choice = call.data[10:]
@@ -58,6 +69,7 @@ async def subscribe(call: types.CallbackQuery):
         save_user(str(call.from_user.id), call.from_user.first_name, call.from_user.last_name, call.from_user.username,
                   False)
     start_message = 'Отлично, настройки сохранены! Можно пользоваться ботом 😌'
+    await bot.answer_callback_query(call.id)
     await call.message.answer(start_message, reply_markup=get_main_menu())
 
 
@@ -91,6 +103,7 @@ async def set_mark(call: types.CallbackQuery):
           'которыми Вы можете описать пройденный день:'
     processing_date[call.from_user.id] = date
     await Form.emojis.set()
+    await bot.answer_callback_query(call.id)
     await call.message.reply(msg)
 
 
@@ -126,11 +139,13 @@ async def set_emojis(message: types.Message, state: FSMContext):
 async def change_day_mark(call: types.CallbackQuery):
     date = datetime.datetime.strptime(call.data[11:], '%d_%m_%Y')
     msg = f'Пожалуйста, выберите оценку, которую бы Вы поставили пройденному дню ({date.strftime("%d.%m.%Y")}):'
+    await bot.answer_callback_query(call.id)
     await call.message.reply(msg, reply_markup=get_marks(date))
 
 
 @dp.callback_query_handler(Text(equals='keep_old_mark'))
 async def keep_old_mark(call: types.CallbackQuery):
+    await bot.answer_callback_query(call.id)
     await call.message.reply('Хорошо, оставляем прежнюю оценку.', reply_markup=get_main_menu())
 
 
@@ -147,7 +162,7 @@ async def evaluate_yesterday(message: types.Message):
 @dp.message_handler(Text(equals='Воспоминания'))
 async def get_old_records(message: types.Message):
     await Form.get_date.set()
-    await message.reply('Пожалуйста, введите дату, за которую Вы хотите получить информацию, в формате ДД.ММ.ГГГГ:')
+    await message.reply('Пожалуйста, введите дату, за которую Вы хотите получить информацию, в формате ДД.ММ.ГГГГ')
 
 
 @dp.message_handler(state=Form.get_date)
@@ -169,8 +184,26 @@ async def print_record(message: types.Message, state: FSMContext):
         msg += '\n\nНайдены следующие записи:\n'
         for i, note in enumerate(notes, 1):
             msg += f'\n<b><i>Запись #{i}:</i></b>\n{note.note}\n'
+
+    files = get_media_by_user_id_and_date(str(message.from_user.id), date)
+    if files is not None and len(files) > 0:
+        msg += '\n\nНайдены следующие медиафайлы за этот день:'
     await state.finish()
     await message.reply(msg, reply_markup=get_main_menu())
+
+    MEDIA_TYPE_MAPPING = {'PHOTO': InputMediaPhoto, 'VIDEO': InputMediaVideo}
+    if len(files) == 1:
+        if files[0].file_type == 'PHOTO':
+            await bot.send_photo(message.from_user.id, files[0].media_url)
+        elif files[0].file_type == 'VIDEO':
+            await bot.send_video(message.from_user.id, files[0].media_url)
+    elif len(files) > 1:
+        for i in range(0, len(files), 10):
+            group = files[i:i + 10]
+            media_group = list(
+                map(lambda media_file: MEDIA_TYPE_MAPPING[media_file.file_type](media_file.media_url), group)
+            )
+            await bot.send_media_group(message.from_user.id, media_group)
 
 
 @dp.message_handler(Text(equals='Настройки уведомлений'))
@@ -182,12 +215,12 @@ async def change_settings(message: types.Message):
 @dp.message_handler(Text(equals='Добавить заметку'))
 async def get_note_date(message: types.Message):
     await Form.note_date.set()
-    await message.reply('Пожалуйста, напишите дату, за какой день Вы хотите добавить заметку, в формате ДД.ММ.ГГГГ:')
+    await message.reply('Пожалуйста, напишите дату, за какой день Вы хотите добавить заметку, в формате ДД.ММ.ГГГГ')
 
 
 @dp.message_handler(state=Form.note_date)
 async def get_note(message: types.Message, state: FSMContext):
-    date = datetime.datetime.strptime(message.text, "%d.%m.%Y")
+    date = datetime.datetime.strptime(message.text, '%d.%m.%Y')
     processing_note_date[message.from_user.id] = date
     await state.finish()
     await Form.note.set()
@@ -201,6 +234,40 @@ async def add_note(message: types.Message, state: FSMContext):
     save_note(str(message.from_user.id), message.text, date)
     await state.finish()
     await message.reply('Заметка успешно сохранена!', reply_markup=get_main_menu())
+
+
+@dp.message_handler(Text(equals='Добавить фото/видео'))
+async def get_media_date(message: types.Message):
+    await Form.media_date.set()
+    await message.reply('Пожалуйста, напишите дату, к какому дню Вы хотите прикрепить фото/видео, в формате ДД.ММ.ГГГГ')
+
+
+@dp.message_handler(state=Form.media_date)
+async def get_media(message: types.Message, state: FSMContext):
+    date = datetime.datetime.strptime(message.text, '%d.%m.%Y')
+    processing_media_date[message.from_user.id] = date
+    await state.finish()
+    await Form.media.set()
+    await message.reply('Теперь отправьте ровно ОДНО фото или видео, которое Вы хотите сохранить (НЕ файлом):')
+
+
+@dp.message_handler(state=Form.media, content_types=types.ContentTypes.ANY)
+async def add_media(message: types, state: FSMContext):
+    date = processing_media_date[message.from_user.id]
+    processing_media_date.pop(message.from_user.id)
+    err = False
+    if message.photo:
+        save_media_url(str(message.from_user.id), message.photo[-1].file_id, 'PHOTO', date)
+    elif message.video:
+        save_media_url(str(message.from_user.id), message.video.file_id, 'VIDEO', date)
+    else:
+        err = True
+    if err:
+        await message.reply('Хм, кажется, это не фото и не видео... Пожалуйста, попробуйте ещё раз или воспользуйтесь '
+                            'командой /cancel')
+    else:
+        await state.finish()
+        await message.reply('Медиафайл успешно сохранён!', reply_markup=get_main_menu())
 
 
 async def shutdown(dispatcher: Dispatcher):

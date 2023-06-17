@@ -8,7 +8,7 @@ create table if not exists emotions
     EMOJI1          char(1)                                   NOT NULL,
     EMOJI2          char(1),
     EMOJI3          char(1),
-    DATE_CREATED    TIMESTAMP DEFAULT CURRENT_DATE            NOT NULL,
+    DATE_CREATED    TIMESTAMP DEFAULT CURRENT_TIMESTAMP       NOT NULL,
     DATE_UPDATED    TIMESTAMP
 );
 
@@ -20,7 +20,7 @@ create table if not exists marks
     ASSESSMENT_DATE DATE                                   NOT NULL,
     USER_EXT_ID     varchar(255)                           NOT NULL,
     MARK            numeric                                NOT NULL,
-    DATE_CREATED    TIMESTAMP DEFAULT CURRENT_DATE         NOT NULL,
+    DATE_CREATED    TIMESTAMP DEFAULT CURRENT_TIMESTAMP    NOT NULL,
     DATE_UPDATED    TIMESTAMP
 );
 
@@ -32,7 +32,7 @@ create table if not exists notes
     ASSESSMENT_DATE DATE                                   NOT NULL,
     USER_EXT_ID     varchar(255)                           NOT NULL,
     NOTE            text                                   NOT NULL,
-    DATE_CREATED    TIMESTAMP DEFAULT CURRENT_DATE         NOT NULL
+    DATE_CREATED    TIMESTAMP DEFAULT CURRENT_TIMESTAMP    NOT NULL
 );
 
 create sequence if not exists seq_media start with 1;
@@ -43,7 +43,8 @@ create table if not exists media
     ASSESSMENT_DATE DATE                                   NOT NULL,
     USER_EXT_ID     varchar(255)                           NOT NULL,
     MEDIA_URL       varchar(255)                           NOT NULL,
-    DATE_CREATED    TIMESTAMP DEFAULT CURRENT_DATE         NOT NULL
+    FILE_TYPE       varchar(255)                           NOT NULL,
+    DATE_CREATED    TIMESTAMP DEFAULT CURRENT_TIMESTAMP    NOT NULL
 );
 
 create sequence if not exists seq_users start with 1;
@@ -56,7 +57,7 @@ create table users
     SECOND_NAME     varchar(255),
     USERNAME        varchar(255),
     SUBSCRIBED      boolean   DEFAULT false                NOT NULL,
-    DATE_REGISTERED TIMESTAMP DEFAULT CURRENT_DATE         NOT NULL
+    DATE_REGISTERED TIMESTAMP DEFAULT CURRENT_TIMESTAMP    NOT NULL
 );
 
 create index if not exists indx_emotions_user on emotions (user_ext_id);
