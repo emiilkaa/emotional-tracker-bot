@@ -14,3 +14,7 @@ class Emotions(Base):
     emoji3 = Column(String)
     date_created = Column(DateTime(timezone=False), nullable=False)
     date_updated = Column(DateTime(timezone=False))
+
+    def get_emojis(self):
+        emojis = [self.emoji1, self.emoji2, self.emoji3]
+        return ', '.join(emoji for emoji in emojis if emoji is not None)
