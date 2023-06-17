@@ -1,4 +1,6 @@
 import datetime
+from pathlib import Path
+
 import emoji
 import logging
 import os
@@ -223,4 +225,5 @@ async def shutdown(dispatcher: Dispatcher):
 
 
 if __name__ == '__main__':
+    Path('bot/files').mkdir(parents=True, exist_ok=True)
     executor.start_polling(dp, skip_updates=True, on_shutdown=shutdown)
