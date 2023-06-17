@@ -7,6 +7,10 @@ def get_user_by_telegram_id(user_id):
     return session.query(User).filter(User.user_ext_id == user_id).first()
 
 def save_user(user_id, first_name, second_name, username, subscribed):
-    session.add(User(user_ext_id=user_id, first_name=first_name, second_name=second_name, username=username,
-                     subscribed=subscribed, date_registered=datetime.datetime.now()))
-    session.commit()
+    if get_user_by_telegram_id(user_id) is None:
+        session.add(User(user_ext_id=user_id, first_name=first_name, second_name=second_name, username=username,
+                         subscribed=subscribed, date_registered=datetime.datetime.now()))
+        session.commit()
+    else:
+        session.query(User).filter(User.user_ext_id == user_id).update({'subscribed': subscribed})
+        session.commit()
