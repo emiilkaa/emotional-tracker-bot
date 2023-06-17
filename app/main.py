@@ -69,6 +69,7 @@ async def subscribe(call: types.CallbackQuery):
         save_user(str(call.from_user.id), call.from_user.first_name, call.from_user.last_name, call.from_user.username,
                   False)
     start_message = 'Отлично, настройки сохранены! Можно пользоваться ботом 😌'
+    await bot.answer_callback_query(call.id)
     await call.message.answer(start_message, reply_markup=get_main_menu())
 
 
@@ -102,6 +103,7 @@ async def set_mark(call: types.CallbackQuery):
           'которыми Вы можете описать пройденный день:'
     processing_date[call.from_user.id] = date
     await Form.emojis.set()
+    await bot.answer_callback_query(call.id)
     await call.message.reply(msg)
 
 
@@ -137,11 +139,13 @@ async def set_emojis(message: types.Message, state: FSMContext):
 async def change_day_mark(call: types.CallbackQuery):
     date = datetime.datetime.strptime(call.data[11:], '%d_%m_%Y')
     msg = f'Пожалуйста, выберите оценку, которую бы Вы поставили пройденному дню ({date.strftime("%d.%m.%Y")}):'
+    await bot.answer_callback_query(call.id)
     await call.message.reply(msg, reply_markup=get_marks(date))
 
 
 @dp.callback_query_handler(Text(equals='keep_old_mark'))
 async def keep_old_mark(call: types.CallbackQuery):
+    await bot.answer_callback_query(call.id)
     await call.message.reply('Хорошо, оставляем прежнюю оценку.', reply_markup=get_main_menu())
 
 
