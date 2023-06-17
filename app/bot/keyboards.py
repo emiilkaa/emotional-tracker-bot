@@ -18,6 +18,7 @@ def get_main_menu():
     menu = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2, one_time_keyboard=True)
     menu.add('Оценить сегодняшний день')
     menu.add('Оценить вчерашний день')
+    menu.add('Добавить заметку')
     # TODO: Добавить раздел "Статистика"
     # menu.add(*['Воспоминания', 'Статистика'])
     menu.add('Воспоминания')
