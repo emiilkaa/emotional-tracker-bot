@@ -12,7 +12,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
 
-from app.repository.notes_repository import save_note, get_notes_by_user_id_and_date
+from repository.notes_repository import save_note, get_notes_by_user_id_and_date
 from bot.keyboards import get_subscribe_menu, get_main_menu, get_change_day_menu, get_marks, get_settings_menu
 from repository.emotions_repository import find_emotions_by_user_id_and_date, save_emotions
 from repository.marks_repository import find_mark_by_user_id_and_date, save_mark
@@ -215,8 +215,11 @@ async def get_stats(message: types.Message):
     images = [histogram_by_week, histogram_by_month, linegraph_by_week, linegraph_by_month]
     media = types.MediaGroup()
     for image in images:
-        media.attach_photo(types.InputFile(f'bot/{image}'))
+        media.attach_photo(types.InputFile(image))
     await bot.send_media_group(message.from_user.id, media)
+    await message.answer('Выберите функцию:', reply_markup=get_main_menu())
+    for image in images:
+        os.remove(image)
 
 
 async def shutdown(dispatcher: Dispatcher):
