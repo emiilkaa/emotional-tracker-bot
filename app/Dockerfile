@@ -1,0 +1,11 @@
+FROM python:3.8-alpine
+ENV EMOTIONS_DB_HOST=emotions_db
+ENV EMOTIONS_DB_USER=admin
+ENV EMOTIONS_DB_PASS=CHANGE_IT
+ENV EMOTIONS_DB_NAME=tracker
+ENV EMOTIONS_TG_TOKEN=PASTE_YOUR_BOT_TOKEN
+WORKDIR /app
+COPY . .
+RUN pip install -r requirements.txt
+ENV PYTHONPATH "${PYTHONPATH}:/"
+CMD ["python", "-u", "main.py"]
