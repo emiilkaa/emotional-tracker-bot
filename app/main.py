@@ -1,6 +1,8 @@
+import asyncio
 import datetime
 from pathlib import Path
 
+import aioschedule as aioschedule
 import emoji
 import logging
 import os
@@ -18,7 +20,7 @@ from repository.notes_repository import save_note, get_notes_by_user_id_and_date
 from bot.keyboards import get_subscribe_menu, get_main_menu, get_change_day_menu, get_marks, get_settings_menu
 from repository.emotions_repository import find_emotions_by_user_id_and_date, save_emotions
 from repository.marks_repository import find_mark_by_user_id_and_date, save_mark
-from repository.user_repository import get_user_by_telegram_id, save_user
+from repository.user_repository import get_user_by_telegram_id, save_user, get_subscribed_users
 from bot.stats import marks_histogram, marks_linegraph
 
 bot = Bot(token=os.environ['EMOTIONS_TG_TOKEN'], parse_mode='HTML')
@@ -204,8 +206,7 @@ async def print_record(message: types.Message, state: FSMContext):
         for i in range(0, len(files), 10):
             group = files[i:i + 10]
             media_group = list(
-                map(lambda media_file: MEDIA_TYPE_MAPPING[media_file.file_type](media_file.media_url), group)
-            )
+                map(lambda media_file: MEDIA_TYPE_MAPPING[media_file.file_type](media_file.media_url), group))
             await bot.send_media_group(message.from_user.id, media_group)
 
 
@@ -289,6 +290,26 @@ async def add_media(message: types, state: FSMContext):
         await message.reply('Медиафайл успешно сохранён!', reply_markup=get_main_menu())
 
 
+async def send_notifications():
+    users = get_subscribed_users()
+    if users is not None and len(users) > 0:
+        chat_ids = list(map(lambda user: user.user_ext_id, users))
+        for chat_id in chat_ids:
+            await bot.send_message(chat_id, 'Не забудьте оценить сегодняшний день и, при желании, сохранить заметки '
+                                            'или медиафайлы, связанные с ним 🙂', reply_markup=get_main_menu())
+
+
+async def scheduler():
+    aioschedule.every().day.at('22:00').do(send_notifications)
+    while True:
+        await aioschedule.run_pending()
+        await asyncio.sleep(1)
+
+
+async def startup(_):
+    asyncio.create_task(scheduler())
+
+
 async def shutdown(dispatcher: Dispatcher):
     await dispatcher.storage.close()
     await dispatcher.storage.wait_closed()
@@ -296,4 +317,4 @@ async def shutdown(dispatcher: Dispatcher):
 
 if __name__ == '__main__':
     Path('bot/files').mkdir(parents=True, exist_ok=True)
-    executor.start_polling(dp, skip_updates=True, on_shutdown=shutdown)
+    executor.start_polling(dp, skip_updates=True, on_startup=startup, on_shutdown=shutdown)
