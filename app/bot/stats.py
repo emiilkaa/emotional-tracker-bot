@@ -20,7 +20,6 @@ def marks_histogram(user_id, days_count):
     ax.pie([percentages[possible_numbers.index(num)] for num in numbers_to_show], labels=numbers_to_show,
            autopct='%1.1f%%', colors=[colors[possible_numbers.index(num)] for num in numbers_to_show])
     ax.set_title(f'Процентное соотношение каждой оценки за последние {days_count + 1} дней')
-    plt.show()
     name_of_file = f'files/{user_id}_{uuid.uuid4().hex}.png'
     plt.savefig(name_of_file)
     return name_of_file
