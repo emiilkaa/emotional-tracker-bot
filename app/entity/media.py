@@ -10,4 +10,5 @@ class Media(Base):
     assessment_date = Column(Date, nullable=False)
     user_ext_id = Column(String, nullable=False)
     media_url = Column(String, nullable=False)
+    file_type = Column(String, nullable=False)
     date_created = Column(DateTime(timezone=False), nullable=False)
