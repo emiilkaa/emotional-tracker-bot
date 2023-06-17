@@ -10,6 +10,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
 
+from app.repository.notes_repository import save_note, get_notes_by_user_id_and_date
 from bot.keyboards import get_subscribe_menu, get_main_menu, get_change_day_menu, get_marks, get_settings_menu
 from repository.emotions_repository import find_emotions_by_user_id_and_date, save_emotions
 from repository.marks_repository import find_mark_by_user_id_and_date, save_mark
@@ -23,10 +24,13 @@ logging.basicConfig(level=logging.INFO)
 
 class Form(StatesGroup):
     emojis = State()
-    date = State()
+    get_date = State()
+    note_date = State()
+    note = State()
 
 
 processing_date = dict()
+processing_note_date = dict()
 
 
 @dp.message_handler(commands='start')
@@ -142,31 +146,62 @@ async def evaluate_yesterday(message: types.Message):
 
 @dp.message_handler(Text(equals='Воспоминания'))
 async def get_old_records(message: types.Message):
-    await Form.date.set()
+    await Form.get_date.set()
     await message.reply('Пожалуйста, введите дату, за которую Вы хотите получить информацию, в формате ДД.ММ.ГГГГ:')
 
 
-@dp.message_handler(state=Form.date)
+@dp.message_handler(state=Form.get_date)
 async def print_record(message: types.Message, state: FSMContext):
     date = datetime.datetime.strptime(message.text, '%d.%m.%Y')
     mark = find_mark_by_user_id_and_date(str(message.from_user.id), date)
     emotions = find_emotions_by_user_id_and_date(str(message.from_user.id), date)
     msg = ''
     if mark is None and emotions is None:
-        msg = 'К сожалению, за этот день ничего не найдено.'
+        msg = 'К сожалению, оценка за этот день не найдена.'
     else:
         if mark is not None:
             msg = f'Оценка за {date.strftime("%d.%m.%Y")}: {mark.mark}'
         if emotions is not None:
             msg += f'\nЭмоции за {date.strftime("%d.%m.%Y")}: {emotions.get_emojis()}'
+
+    notes = get_notes_by_user_id_and_date(str(message.from_user.id), date)
+    if notes is not None and len(notes) > 0:
+        msg += '\n\nНайдены следующие записи:\n'
+        for i, note in enumerate(notes, 1):
+            msg += f'\n<b><i>Запись #{i}:</i></b>\n{note.note}\n'
     await state.finish()
     await message.reply(msg, reply_markup=get_main_menu())
 
 
 @dp.message_handler(Text(equals='Настройки уведомлений'))
-async def get_old_records(message: types.Message):
+async def change_settings(message: types.Message):
     await message.reply('Выберите, присылать ли Вам ежедневные уведомления с напоминанием воспользоваться ботом?',
                         reply_markup=get_settings_menu())
+
+
+@dp.message_handler(Text(equals='Добавить заметку'))
+async def get_note_date(message: types.Message):
+    await Form.note_date.set()
+    await message.reply('Пожалуйста, напишите дату, за какой день Вы хотите добавить заметку, в формате ДД.ММ.ГГГГ:')
+
+
+@dp.message_handler(state=Form.note_date)
+async def get_note(message: types.Message, state: FSMContext):
+    date = datetime.datetime.strptime(message.text, "%d.%m.%Y")
+    processing_note_date[message.from_user.id] = date
+    await state.finish()
+    await Form.note.set()
+    await message.reply('Теперь напишите саму заметку, которую Вы хотите сохранить:')
+
+
+@dp.message_handler(state=Form.note)
+async def add_note(message: types.Message, state: FSMContext):
+    date = processing_note_date[message.from_user.id]
+    processing_note_date.pop(message.from_user.id)
+    save_note(str(message.from_user.id), message.text, date)
+    await state.finish()
+    await message.reply('Заметка успешно сохранена!', reply_markup=get_main_menu())
+
 
 async def shutdown(dispatcher: Dispatcher):
     await dispatcher.storage.close()
