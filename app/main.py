@@ -243,6 +243,8 @@ async def add_note(message: types.Message, state: FSMContext):
 @dp.message_handler(Text(equals='Статистика'))
 async def get_stats(message: types.Message):
     histogram_by_week = marks_histogram(str(message.from_user.id), 6)
+    if histogram_by_week is None:
+        await message.answer('Вы ещё не оценили ни один день, поэтому статистики пока нет 😶', reply_markup=get_main_menu())
     histogram_by_month = marks_histogram(str(message.from_user.id), 29)
     linegraph_by_week = marks_linegraph(str(message.from_user.id), 6)
     linegraph_by_month = marks_linegraph(str(message.from_user.id), 29)
