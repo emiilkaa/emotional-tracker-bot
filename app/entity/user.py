@@ -12,4 +12,5 @@ class User(Base):
     second_name = Column(String)
     username = Column(String)
     subscribed = Column(Boolean, default=False, nullable=False)
+    active = Column(Boolean, default=True, nullable=False)
     date_registered = Column(DateTime(timezone=False), nullable=False)
