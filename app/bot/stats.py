@@ -11,6 +11,8 @@ def marks_histogram(user_id, days_count):
     plt.clf()
     user_marks = get_marks_by_user_id_and_date_in(user_id,
                                                   datetime.datetime.today() - datetime.timedelta(days=days_count))
+    if user_marks is None or len(user_marks) == 0:
+        return None
     marks = list()
     for el in user_marks:
         marks.append(el.mark)
@@ -32,6 +34,8 @@ def marks_linegraph(user_id, days_count):
     plt.clf()
     user_marks = get_marks_by_user_id_and_date_in(user_id,
                                                   datetime.datetime.today() - datetime.timedelta(days=days_count))
+    if user_marks is None or len(user_marks) == 0:
+        return None
     mark_date = dict()
     for el in user_marks:
         mark_date[el.assessment_date.strftime('%d.%m.%Y')] = el.mark

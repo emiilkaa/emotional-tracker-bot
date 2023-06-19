@@ -1,4 +1,7 @@
-emoji~=2.5.1
+uuid~=1.30
+matplotlib~=3.7.1
 aiogram~=2.25.1
 SQLAlchemy~=2.0.15
 psycopg2~=2.9.6
+aioschedule~=0.5.2
+emoji~=2.5.1

@@ -1,4 +1,4 @@
-FROM python:3.8-alpine
+FROM python:3.8
 ENV EMOTIONS_DB_HOST=emotions_db
 ENV EMOTIONS_DB_USER=admin
 ENV EMOTIONS_DB_PASS=CHANGE_IT
