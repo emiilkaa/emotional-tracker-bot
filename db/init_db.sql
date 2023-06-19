@@ -57,6 +57,7 @@ create table users
     SECOND_NAME     varchar(255),
     USERNAME        varchar(255),
     SUBSCRIBED      boolean   DEFAULT false                NOT NULL,
+    ACTIVE          boolean   DEFAULT true                 NOT NULL,
     DATE_REGISTERED TIMESTAMP DEFAULT CURRENT_TIMESTAMP    NOT NULL
 );
 
@@ -73,4 +74,4 @@ create index if not exists indx_media_user on media (user_ext_id);
 create index if not exists indx_media_user_date on media (user_ext_id, assessment_date);
 
 create index if not exists indx_users_user on users (user_ext_id);
-create index if not exists indx_users_subscribed on users (subscribed);
+create index if not exists indx_users_active_subscribed on users (active, subscribed);

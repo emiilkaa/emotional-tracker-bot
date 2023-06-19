@@ -14,13 +14,14 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import InputMediaPhoto, InputMediaVideo
+from aiogram.utils.exceptions import BotBlocked
 
 from repository.media_repository import save_media_url, get_media_by_user_id_and_date
 from repository.notes_repository import save_note, get_notes_by_user_id_and_date
 from bot.keyboards import get_subscribe_menu, get_main_menu, get_change_day_menu, get_marks, get_settings_menu
 from repository.emotions_repository import find_emotions_by_user_id_and_date, save_emotions
 from repository.marks_repository import find_mark_by_user_id_and_date, save_mark
-from repository.user_repository import get_user_by_telegram_id, save_user, get_subscribed_users
+from repository.user_repository import get_user_by_telegram_id, save_user, get_subscribed_users, delete_user
 from bot.stats import marks_histogram, marks_linegraph
 
 bot = Bot(token=os.environ['EMOTIONS_TG_TOKEN'], parse_mode='HTML')
@@ -46,7 +47,7 @@ processing_media_date = dict()
 @dp.message_handler(commands='start')
 async def cmd_start(message: types.Message):
     user_row = get_user_by_telegram_id(str(message.from_user.id))
-    if user_row is None:
+    if user_row is None or not user_row.active:
         start_message = 'Привет! Я Ваш личный помощник для отслеживания настроения. Я могу помочь Вам делать записи ' \
                         'о своём настроении, оценивать, как Вы проводите дни, оставлять заметки. Для ' \
                         'начала ответьте, хотели ли бы Вы получать напоминания о необходимости оставить запись о ' \
@@ -62,6 +63,13 @@ async def cmd_start(message: types.Message):
 async def cmd_cancel(message: types.Message, state: FSMContext):
     await state.finish()
     await message.answer('Выберите функцию:', reply_markup=get_main_menu())
+
+
+@dp.errors_handler(exception=BotBlocked)
+async def bot_blocked_handler(update: types.Update, exception: BotBlocked):
+    logging.info(f'User with chat id {update.message.from_user.id} was deleted')
+    delete_user(str(update.message.from_user.id))
+    return True
 
 
 @dp.callback_query_handler(Text(startswith='subscribe_'))
@@ -243,6 +251,9 @@ async def add_note(message: types.Message, state: FSMContext):
 @dp.message_handler(Text(equals='Статистика'))
 async def get_stats(message: types.Message):
     histogram_by_week = marks_histogram(str(message.from_user.id), 6)
+    if histogram_by_week is None:
+        await message.answer('Вы ещё не оценили ни один день, поэтому статистики пока нет 😶',
+                             reply_markup=get_main_menu())
     histogram_by_month = marks_histogram(str(message.from_user.id), 29)
     linegraph_by_week = marks_linegraph(str(message.from_user.id), 6)
     linegraph_by_month = marks_linegraph(str(message.from_user.id), 29)
@@ -295,8 +306,15 @@ async def send_notifications():
     if users is not None and len(users) > 0:
         chat_ids = list(map(lambda user: user.user_ext_id, users))
         for chat_id in chat_ids:
-            await bot.send_message(chat_id, 'Не забудьте оценить сегодняшний день и, при желании, сохранить заметки '
-                                            'или медиафайлы, связанные с ним 🙂', reply_markup=get_main_menu())
+            try:
+                await bot.send_message(chat_id,
+                                       'Не забудьте оценить сегодняшний день и, при желании, сохранить заметки '
+                                       'или медиафайлы, связанные с ним 🙂', reply_markup=get_main_menu())
+            except BotBlocked:
+                logging.info(f'User with chat id {chat_id} was deleted')
+                delete_user(chat_id)
+            except Exception as e:
+                logging.error(f'Something went wrong while sending scheduled message: {str(e)}')
 
 
 async def scheduler():
