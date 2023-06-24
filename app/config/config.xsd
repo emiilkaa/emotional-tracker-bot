@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="config">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="TG_TOKEN" type="xs:string"/>
+                <xs:element name="DB_HOST" type="xs:string"/>
+                <xs:element name="DB_USER" type="xs:string"/>
+                <xs:element name="DB_PASS" type="xs:string"/>
+                <xs:element name="DB_NAME" type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

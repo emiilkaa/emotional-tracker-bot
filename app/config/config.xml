@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="config.xsd">
+    <TG_TOKEN>your_token_here</TG_TOKEN>
+    <DB_HOST>emotions_db</DB_HOST>
+    <DB_USER>admin</DB_USER>
+    <DB_PASS>your_db_password_here</DB_PASS>
+    <DB_NAME>tracker</DB_NAME>
+</config>
